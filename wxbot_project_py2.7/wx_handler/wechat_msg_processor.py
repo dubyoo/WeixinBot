@@ -198,7 +198,8 @@ class WeChatMsgProcessor(object):
         elif text == 'reply':
             wechat.send_text(uid, '自动回复')
         elif text == '1':
-            wechat.send_text(uid, '请按此格式查询流量：\n流量 [端口号] [密码]\n例如：\n流量 2018 password\n')
+            wechat.send_text(uid, '请按此格式查询流量：\n流量 [端口号] [密码]')
+            wechat.send_text(uid, '示例：\n流量 2018 password')
         elif text == '2':
             wechat.send_text(uid, '每月10日重置流量')
         elif text == '3':
