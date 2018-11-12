@@ -197,6 +197,12 @@ class WeChatMsgProcessor(object):
             wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
         elif text == 'reply':
             wechat.send_text(uid, '自动回复')
+        elif text == '1':
+            wechat.send_text(uid, '查询流量方法：发送 端口号 密码')
+        elif text == '2':
+            wechat.send_text(uid, 'To be completed...')
+        else:
+            wechat.send_text(uid, '1. 查询流量\n2. 查询其他')
 
 
     def handle_command(self, cmd, msg):
