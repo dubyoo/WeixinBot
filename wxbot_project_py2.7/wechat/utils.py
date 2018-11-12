@@ -17,6 +17,10 @@ import cPickle as pickle
 import traceback
 import time
 import hashlib
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 #===================================================
 
 
