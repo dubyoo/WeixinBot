@@ -24,9 +24,9 @@ contact_member_list = Pickle/MemberList.pkl
 contact_group_list = Pickle/GroupList.pkl
 contact_group_memeber_list = Pickle/GroupMemeberList.pkl
 contact_special_users_list = Pickle/SpecialUsersList.pkl
-server_mode = False
+server_mode = True
 server_log_file = server.log
-log_mode = False
+log_mode = True
 
 [mysql]
 host = localhost
