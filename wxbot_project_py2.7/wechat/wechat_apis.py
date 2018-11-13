@@ -485,7 +485,8 @@ class WXAPI(object):
             'RemarkName': remark_name,
             'UserName': user_id
         }
-        return None
+        ret = post(url, params)
+        return ret
 
 
     def webwxsendmsg(self, word, to='filehelper'):
