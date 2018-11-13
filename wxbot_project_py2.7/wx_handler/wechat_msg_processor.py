@@ -198,7 +198,7 @@ class WeChatMsgProcessor(object):
             wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
         elif cmd[0] == '改备注':
             remark_name = ""
-            if cmd.len > 1:
+            if cmd.len() > 1:
                 remark_name = cmd[1]
             wechat.modify_remark_name(uid, remark_name)
         elif cmd[0] == '1':
