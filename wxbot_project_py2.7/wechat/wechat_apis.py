@@ -470,6 +470,24 @@ class WXAPI(object):
         data = get(url, api='webwxgetheadimg')
         return data
 
+    def webwxmodifyremarkname(self, user_id, remark_name):
+        """
+        @brief      modify user's remark name （改备注名）
+        @param      user_id         String
+        @param      remark_name     String
+        @return
+        """
+        url = self.wx_conf['API_webwxoplog'] + \
+            '?pass_ticket=%s' % (self.pass_ticket)
+        params = {
+            'BaseRequest': self.base_request,
+            'CmdId': 2,
+            'RemarkName': remark_name,
+            'UserName': user_id
+        }
+        return None
+
+
     def webwxsendmsg(self, word, to='filehelper'):
         """
         @brief      send text message
@@ -759,6 +777,20 @@ class WXAPI(object):
                 self.uuid = dic['uuid']
                 return True
         return False
+
+    def modify_remark_name(self, user_id, remark_name):
+        """
+        @brief      modify remark name
+        @param      user_id         String
+        @param      remark_name     String
+        @return
+        """
+        try:
+            self.webwxmodifyremarkname(user_id, remark_name)
+            self.webwxmodifyremarkname(user_id, remark_name)
+            return True
+        except:
+            return False
 
     def send_text(self, user_id, text):
         """

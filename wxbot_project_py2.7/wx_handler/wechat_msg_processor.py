@@ -192,20 +192,43 @@ class WeChatMsgProcessor(object):
         text = trans_coding(msg['text']).encode('utf-8')
         uid = msg['raw_msg']['FromUserName']
 
-        if text == 'test_revoke': # 撤回消息测试
+        cmd = text.split()
+        if cmd[0] == 'test_revoke': # 撤回消息测试
             dic = wechat.webwxsendmsg('这条消息将被撤回', uid)
             wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
-        elif text == 'reply':
-            wechat.send_text(uid, '自动回复')
-        elif text == '1':
-            wechat.send_text(uid, '请按此格式查询流量：\n流量 [端口号] [密码]')
-            wechat.send_text(uid, '示例：\n流量 2018 password')
-        elif text == '2':
+        elif cmd[0] == '改备注':
+            remark_name = ""
+            if cmd.len > 1:
+                remark_name = cmd[1]
+            wechat.modify_remark_name(uid, remark_name)
+        elif cmd[0] == '1':
+            wechat.send_text(uid, '未绑定用户')
+            wechat.send_text(uid, '请按此格式回复绑定用户：\n绑定 [端口号] [密码]')
+            wechat.send_text(uid, '示例：\n绑定 2018 password')
+
+            wechat.send_text(uid, '已绑定用户')
+            wechat.send_text(uid, '请回复 "解除绑定" 进行解绑')
+            pass
+        elif cmd[0] == '2':
+            wechat.send_text(uid, '剩余流量')
+            pass
+        elif cmd[0] == '3':
             wechat.send_text(uid, '每月10日重置流量')
-        elif text == '3':
+            pass
+        elif cmd[0] == '4':
+            wechat.send_text(uid, 'IP:\nPort:\nPassword:')
+            pass
+        elif cmd[0] == '5':
             wechat.send_text(uid, 'To be completed...')
+            pass
+        elif cmd[0] == '绑定' and cmd.len() == 3:
+            wechat.send_text(uid, '绑定成功')
+            pass
+        elif cmd[0] == '解除绑定':
+            wechat.send_text(uid, "解绑成功")
+            pass
         else:
-            wechat.send_text(uid, '回复数字进行查询：\n1. 查询流量\n2. 查询流量重置日期\n3. 查询其他')
+            wechat.send_text(uid, '请回复数字：\n1. 绑定/解绑用户\n2. 查询剩余流量\n3. 查询流量重置日期\n4. 查询IP、端口号和密码\n5. 查询其他')
 
 
     def handle_command(self, cmd, msg):
