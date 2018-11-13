@@ -198,7 +198,7 @@ class WeChatMsgProcessor(object):
             wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
         elif cmd[0] == '改备注':
             remark_name = ""
-            if cmd.len() > 1:
+            if len(cmd) > 1:
                 remark_name = cmd[1]
             wechat.modify_remark_name(uid, remark_name)
         elif cmd[0] == '1':
@@ -221,7 +221,7 @@ class WeChatMsgProcessor(object):
         elif cmd[0] == '5':
             wechat.send_text(uid, 'To be completed...')
             pass
-        elif cmd[0] == '绑定' and cmd.len() == 3:
+        elif cmd[0] == '绑定' and len(cmd) == 3:
             wechat.send_text(uid, '绑定成功')
             pass
         elif cmd[0] == '解除绑定':
