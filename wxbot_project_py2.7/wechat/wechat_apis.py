@@ -789,6 +789,7 @@ class WXAPI(object):
         try:
             self.webwxmodifyremarkname(user_id, remark_name)
             self.webwxmodifyremarkname(user_id, remark_name)
+            self.webwxgetcontact()
             return True
         except:
             return False
