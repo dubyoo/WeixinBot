@@ -11,6 +11,7 @@ import os
 import time
 import json
 import re
+import socket
 #===================================================
 
 
@@ -192,44 +193,117 @@ class WeChatMsgProcessor(object):
         text = trans_coding(msg['text']).encode('utf-8')
         uid = msg['raw_msg']['FromUserName']
 
-        cmd = text.split()
-        if cmd[0] == 'test_revoke': # 撤回消息测试
-            dic = wechat.webwxsendmsg('这条消息将被撤回', uid)
-            wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
-        elif cmd[0] == '改备注':
-            remark_name = ""
-            if len(cmd) > 1:
-                remark_name = cmd[1]
-            wechat.modify_remark_name(uid, remark_name)
-        elif cmd[0] == '1':
-            wechat.send_text(uid, '未绑定用户')
-            wechat.send_text(uid, '请按此格式回复绑定用户：\n绑定 [端口号] [密码]')
-            wechat.send_text(uid, '示例：\n绑定 2018 password')
+        registered = self.is_registered(uid)
 
-            wechat.send_text(uid, '已绑定用户')
-            wechat.send_text(uid, '请回复 "解除绑定" 进行解绑')
-            pass
+        cmd = text.split()
+        #if cmd[0] == 'test_revoke': # 撤回消息测试
+        #    dic = wechat.webwxsendmsg('这条消息将被撤回', uid)
+        #    wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
+
+        # not registered
+        if cmd[0] in ['2', '4', '解除绑定'] and not registered:
+            wechat.send_text(uid, '未绑定，请先绑定用户')
+
+        if cmd[0] == '1':
+            if registered:
+                wechat.send_text(uid, '已绑定,请回复 "解除绑定" 进行解绑')
+            else:
+                wechat.send_text(uid, '请按此格式回复绑定用户：\n绑定 [端口号] [密码]')
+                wechat.send_text(uid, '示例：\n绑定 2018 password')
         elif cmd[0] == '2':
-            wechat.send_text(uid, '剩余流量')
-            pass
+            self.handle_traffic_check(uid)
         elif cmd[0] == '3':
             wechat.send_text(uid, '每月10日重置流量')
-            pass
         elif cmd[0] == '4':
+            self.handle_user_info_check()
             wechat.send_text(uid, 'IP:\nPort:\nPassword:')
-            pass
         elif cmd[0] == '5':
             wechat.send_text(uid, 'To be completed...')
-            pass
-        elif cmd[0] == '绑定' and len(cmd) == 3:
-            wechat.send_text(uid, '绑定成功')
-            pass
+        elif cmd[0] == '绑定' and len(cmd) >= 3:
+            self.handle_registration(uid, cmd[1], cmd[2])
         elif cmd[0] == '解除绑定':
-            wechat.send_text(uid, "解绑成功")
-            pass
+            self.handle_unregistration(uid)
         else:
-            wechat.send_text(uid, '请回复数字：\n1. 绑定/解绑用户\n2. 查询剩余流量\n3. 查询流量重置日期\n4. 查询IP、端口号和密码\n5. 查询其他')
+            wechat.send_text(uid, '\
+            请回复数字：\n\
+            1. 绑定/解绑用户\n\
+            2. 查询剩余流量\n\
+            3. 查询流量重置日期\n\
+            4. 查询我的IP、端口号和密码\n\
+            5. 查询其他')
+        return
 
+    def handle_user_info_check(self, uid):
+        port = self.get_port(uid)
+        fopen = open('/home/ss-bash-master/ssusers')
+        lines = fopen.readlines()
+        for line in lines:
+            elements = line.split()
+            if elements[0] == '#':
+                continue
+            if elements[0] == port and len(elements) > 1:
+                ip = self.get_host_ip()
+                msg = 'IP:' + ip + '\nPort:' + port + '\nPassword:' + elements[1]
+                self.wechat.send_text(uid, msg)
+                break
+
+    def handle_traffic_check(self, uid):
+        port = self.get_port(uid)
+        fopen = open('/home/ss-bash-master/sstraffic')
+        lines = fopen.readlines()
+        for line in lines:
+            elements = line.split()
+            if elements[0] == '#':
+                continue
+            if elements[0] == port and len(elements) > 3:
+                msg = '总量：' + elements[1] + '\n已用：' + elements[2] + '\n剩余：' + elements[3]
+                self.wechat.send_text(uid, msg)
+                break
+
+    def get_host_ip(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+        return ip
+
+    def get_port(self, uid):
+        remark_name = self.wechat.get_user_by_id(uid)['RemarkName']
+        names = remark_name.split()
+        port = names[1]
+        return port
+
+    def handle_registration(self, uid, port, password):
+        fopen = open('/home/ss-bash-master/ssusers')
+        lines = fopen.readlines()
+        match = False
+        for line in lines:
+            elements = line.split()
+            if elements[0] == '#':
+                continue
+            if elements[0] == port and elements[1] == password:
+                match = True
+                break
+        if match:
+            remark_name = "SS " + port
+            self.wechat.modify_remark_name(uid, remark_name)
+            self.wechat.send_text(uid, '绑定成功')
+        else:
+            self.wechat.send_text(uid, '端口或密码错误')
+
+    def handle_unregistration(self, uid):
+        self.wechat.modify_remark_name(uid, "")
+        self.wechat.send_text(uid, "解绑成功")
+
+    def is_registered(self, uid):
+        remark_name = self.wechat.get_user_by_id(uid)['RemarkName']
+        names = remark_name.split()
+        if len(names) > 1 and names[0] == "SS":
+            return True
+        else:
+            return False
 
     def handle_command(self, cmd, msg):
         """
