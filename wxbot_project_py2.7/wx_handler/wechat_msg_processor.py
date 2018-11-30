@@ -201,37 +201,56 @@ class WeChatMsgProcessor(object):
         #    wechat.revoke_msg(dic['MsgID'], uid, dic['LocalID'])
 
         # not registered
-        if cmd[0] in ['2', '4', '解除绑定'] and not registered:
+        if cmd[0] in ['2', '4', '5', '解除绑定', '改密码'] and not registered:
             wechat.send_text(uid, '未绑定，请先绑定用户')
 
         if cmd[0] == '1':
             if registered:
                 wechat.send_text(uid, '已绑定,请回复 "解除绑定" 进行解绑')
             else:
-                wechat.send_text(uid, '请按此格式回复绑定用户：\n绑定 [端口号] [密码]')
-                wechat.send_text(uid, '示例：\n绑定 2018 password')
+                wechat.send_text(uid, '请按此格式回复绑定用户：\n绑定 [端口号] [密码]'
+                                 + '\n\n示例：\n绑定 2018 password')
         elif cmd[0] == '2':
             self.handle_traffic_check(uid)
         elif cmd[0] == '3':
             wechat.send_text(uid, '每月10日重置流量')
         elif cmd[0] == '4':
-            self.handle_user_info_check()
-            wechat.send_text(uid, 'IP:\nPort:\nPassword:')
+            self.handle_user_info_check(uid)
         elif cmd[0] == '5':
+            wechat.send_text(uid, '请按此格式回复更改密码：\n改密码 [密码]'
+                             + '\n\n示例：\n改密码 password')
+        elif cmd[0] == '6':
             wechat.send_text(uid, 'To be completed...')
         elif cmd[0] == '绑定' and len(cmd) >= 3:
             self.handle_registration(uid, cmd[1], cmd[2])
         elif cmd[0] == '解除绑定':
             self.handle_unregistration(uid)
+        elif cmd[0] == '改密码' and len(cmd) >= 2:
+            self.handle_change_password(uid, cmd[1])
         else:
-            wechat.send_text(uid, '\
-            请回复数字：\n\
-            1. 绑定/解绑用户\n\
-            2. 查询剩余流量\n\
-            3. 查询流量重置日期\n\
-            4. 查询我的IP、端口号和密码\n\
-            5. 查询其他')
+            wechat.send_text(uid
+                             , '请回复数字：'
+                             + '\n1. 绑定/解绑用户'
+                             + '\n2. 查询剩余流量'
+                             + '\n3. 查询流量重置日期'
+                             + '\n4. 查询我的IP、端口号和密码'
+                             + '\n5. 更改密码'
+                             + '\n6. 查询其他')
         return
+
+    def handle_change_password(self, uid, psw):
+        port = self.get_port(uid)
+        if long(port) < 20000:
+            self.wechat.send_text(uid, '该账号不支持修改密码')
+            return
+
+        command = '/home/ss-bash-master/ssadmin.sh cpw ' + port + ' ' + psw
+        ret = os.system(command)
+        if ret == 0:
+            msg = '修改成功，新密码是：' + psw
+            self.wechat.send_text(uid, msg)
+        else:
+            self.wechat.send_text(uid, '修改失败')
 
     def handle_user_info_check(self, uid):
         port = self.get_port(uid)
@@ -243,9 +262,10 @@ class WeChatMsgProcessor(object):
                 continue
             if elements[0] == port and len(elements) > 1:
                 ip = self.get_host_ip()
-                msg = 'IP:' + ip + '\nPort:' + port + '\nPassword:' + elements[1]
+                msg = 'IP：' + ip + '\n端口：' + port + '\n密码：' + elements[1]
                 self.wechat.send_text(uid, msg)
                 break
+        fopen.close()
 
     def handle_traffic_check(self, uid):
         port = self.get_port(uid)
@@ -259,6 +279,7 @@ class WeChatMsgProcessor(object):
                 msg = '总量：' + elements[1] + '\n已用：' + elements[2] + '\n剩余：' + elements[3]
                 self.wechat.send_text(uid, msg)
                 break
+        fopen.close()
 
     def get_host_ip(self):
         try:
@@ -292,6 +313,7 @@ class WeChatMsgProcessor(object):
             self.wechat.send_text(uid, '绑定成功')
         else:
             self.wechat.send_text(uid, '端口或密码错误')
+        fopen.close()
 
     def handle_unregistration(self, uid):
         self.wechat.modify_remark_name(uid, "")
